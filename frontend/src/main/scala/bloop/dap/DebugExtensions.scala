@@ -8,8 +8,15 @@ import java.util.function.Consumer
 import com.microsoft.java.debug.core.IEvaluatableBreakpoint
 import com.microsoft.java.debug.core.adapter._
 import com.microsoft.java.debug.core.protocol.Types
-import com.sun.jdi.{ObjectReference, StackFrame, ThreadReference, Value}
 import io.reactivex.Observable
+import com.sun.jdi.{
+  ObjectReference,
+  StackFrame,
+  ThreadReference,
+  Value,
+  Bootstrap,
+  VirtualMachineManager
+}
 
 object DebugExtensions {
   def newContext: IProviderContext = {
@@ -64,28 +71,42 @@ object DebugExtensions {
   }
 
   object HotCodeReplaceProvider extends IHotCodeReplaceProvider {
-    override def onClassRedefined(consumer: Consumer[util.List[String]]): Unit = {}
+    override def onClassRedefined(consumer: Consumer[util.List[String]]): Unit = ()
     override def redefineClasses(): CompletableFuture[util.List[String]] =
       CompletableFuture.completedFuture(util.Collections.emptyList())
     override def getEventHub: Observable[HotCodeReplaceEvent] = Observable.empty()
   }
 
   object SourceLookUpProvider extends ISourceLookUpProvider {
-    override def supportsRealtimeBreakpointVerification(): Boolean = false
+    override def supportsRealtimeBreakpointVerification(): Boolean = {
+      pprint.log("support Real time")
+      true
+    }
 
     override def getFullyQualifiedName(
         uri: String,
         lines: Array[Int],
         columns: Array[Int]
-    ): Array[String] = Array()
+    ): Array[String] = {
+      pprint.log(uri)
+      pprint.log(lines)
+      pprint.log(columns)
+      Array("*")
+    }
 
-    override def getSourceFileURI(fullyQualifiedName: String, sourcePath: String): String =
+    override def getSourceFileURI(fullyQualifiedName: String, sourcePath: String): String = {
+      pprint.log(fullyQualifiedName)
+      pprint.log(sourcePath)
+
       sourcePath
-    override def getSourceContents(uri: String): String = ""
+    }
+    override def getSourceContents(uri: String): String = {
+      pprint.log(uri)
+      ""
+    }
   }
 
   object VirtualMachineManagerProvider extends IVirtualMachineManagerProvider {
-    import com.sun.jdi.{Bootstrap, VirtualMachineManager}
     def getVirtualMachineManager: VirtualMachineManager = Bootstrap.virtualMachineManager
   }
 }

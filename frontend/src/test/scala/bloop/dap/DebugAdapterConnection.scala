@@ -2,13 +2,16 @@ package bloop.dap
 
 import java.net.{InetSocketAddress, Socket, URI}
 
-import bloop.dap.DebugTesEndpoints._
+import bloop.dap.DebugTestEndpoints._
 import bloop.dap.DebugTestProtocol.Response
 import com.microsoft.java.debug.core.protocol.Events
 import com.microsoft.java.debug.core.protocol.Requests._
 import com.microsoft.java.debug.core.protocol.Types.Capabilities
 import monix.eval.Task
 import monix.execution.Scheduler
+import com.microsoft.java.debug.core.Breakpoint
+import com.microsoft.java.debug.core.protocol.Responses.SetBreakpointsResponseBody
+import com.microsoft.java.debug.core.protocol.Responses.ContinueResponseBody
 
 /**
  * Manages a connection with a debug adapter.
@@ -17,7 +20,30 @@ import monix.execution.Scheduler
 private[dap] final class DebugAdapterConnection(val socket: Socket, adapter: DebugAdapterProxy) {
   def initialize(): Task[Response[Capabilities]] = {
     val arguments = new InitializeArguments()
+    // These are the defaults specified in the DAP specification
+    arguments.linesStartAt1 = true
+    arguments.columnsStartAt1 = true
     adapter.request(Initialize, arguments)
+  }
+
+  def initialized: Task[Events.InitializedEvent] = {
+    adapter.events.first(Initialized)
+  }
+
+  def setBreakpoints(
+      arguments: SetBreakpointArguments
+  ): Task[Response[SetBreakpointsResponseBody]] = {
+    adapter.request(SetBreakpoints, arguments)
+  }
+
+  def stopped: Task[Events.StoppedEvent] = {
+    adapter.events.first(StoppedEvent)
+  }
+
+  def continue(threadId: Long): Task[Response[ContinueResponseBody]] = {
+    val arguments = new ContinueArguments()
+    arguments.threadId = threadId
+    adapter.request(Continue, arguments)
   }
 
   def configurationDone(): Task[Response[Unit]] = {

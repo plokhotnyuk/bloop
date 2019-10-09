@@ -51,6 +51,7 @@ private[dap] final class DebugAdapterProxy(
   private def handleMessage(message: ProtocolMessage): Unit = {
     message match {
       case event: Messages.Event =>
+        pprint.log(event)
         events.onNext(event)
       case _: Messages.Request =>
         throw new IllegalStateException("Reverse requests are not supported")

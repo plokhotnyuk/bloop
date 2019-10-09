@@ -38,3 +38,5 @@ benchmark-bridge/corpus/
 
 # Scala Native
 lowered.hnir
+
+project/metals.sbt

@@ -162,6 +162,7 @@ final class DebugSession(
 
   override def sendEvent(event: Events.DebugEvent): Unit = {
     try {
+      pprint.log(event)
       super.sendEvent(event)
 
       if (event.`type` == "exited") loggerAdapter.onDebuggeeFinished()

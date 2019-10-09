@@ -15,6 +15,10 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{Promise, TimeoutException}
+import com.microsoft.java.debug.core.protocol.Types.Capabilities
+import com.microsoft.java.debug.core.protocol.Requests.SetBreakpointArguments
+import com.microsoft.java.debug.core.protocol.Types
+import com.microsoft.java.debug.core.protocol.Types.SourceBreakpoint
 
 object DebugServerSpec extends BspBaseSuite {
   override val protocol: BspProtocol.Local.type = BspProtocol.Local
@@ -36,7 +40,7 @@ object DebugServerSpec extends BspBaseSuite {
   test("cancelling closes client connection") {
     startDebugServer(Task.now(())) { server =>
       val test = for {
-        client <- server.connect
+        client <- server.startConnection
         _ <- Task(server.cancel())
         clientClosed <- awaitClosed(client)
       } yield {
@@ -50,7 +54,7 @@ object DebugServerSpec extends BspBaseSuite {
   test("sends exit and terminated events when cancelled") {
     TestUtil.withinWorkspace { workspace =>
       val main =
-        """|/main/scala/Main.scala
+        """|/Main.scala
            |object Main {
            |  def main(args: Array[String]): Unit = {
            |    synchronized(wait())  // block for all eternity
@@ -66,9 +70,10 @@ object DebugServerSpec extends BspBaseSuite {
 
         startDebugServer(runner) { server =>
           val test = for {
-            client <- server.connect
+            client <- server.startConnection
             _ <- client.initialize()
             _ <- client.launch()
+            _ <- client.initialized
             _ <- client.configurationDone()
             _ <- Task(server.cancel())
             _ <- client.terminated
@@ -87,33 +92,108 @@ object DebugServerSpec extends BspBaseSuite {
   test("closes the client when debuggee finished and terminal events are sent") {
     TestUtil.withinWorkspace { workspace =>
       val main =
-        """|/main/scala/Main.scala
-           |object Main {
+        """|/Main.scala
+           |object Main extends MainBase {
            |  def main(args: Array[String]): Unit = {
-           |    println("Hello, World!")
+           |    val thunk = () => {
+           |      println("I have a breakpoint")
+           |      println("Breakpoint was continued!")
+           |    }
+           |    class Bar {
+           |      def print = {
+           |        println("I have a breakpoint II")
+           |        println("Breakpoint was continued II!")
+           |      }
+           |    }
+           |    thunk()
+           |    val b = new Bar
+           |    b.print
+           |    //main2(Array.empty)
+           |  }
+           |}
+           |""".stripMargin
+
+      val mainBase =
+        """|/MainBase.scala
+           |class MainBase {
+           |  def main2(args: Array[String]): Unit = {
+           |    val thunk = () => {
+           |      println("I have a breakpoint")
+           |      println("Breakpoint was continued!")
+           |    }
+           |    class Bar {
+           |      def print = {
+           |        println("I have a breakpoint II")
+           |        println("Breakpoint was continued II!")
+           |      }
+           |    }
+           |    thunk()
+           |    val b = new Bar
+           |    b.print
            |  }
            |}
            |""".stripMargin
 
       val logger = new RecordingLogger(ansiCodesSupported = false)
-      val project = TestProject(workspace, "r", List(main))
+      val project = TestProject(workspace, "r", List(main, mainBase))
 
       loadBspState(workspace, List(project), logger) { state =>
         val runner = mainRunner(project, state)
 
+        val buildProject = state.toTestState.getProjectFor(project)
+        val `Main.scala` = buildProject.sources
+          .map(_.resolve("Main.scala"))
+          .find(_.exists)
+          .get
+          .getParent
+          .resolve("Main3.scala")
+        val firstBreakpoint = {
+          val arguments = new SetBreakpointArguments()
+          val sourceBreakpoint = new SourceBreakpoint()
+          sourceBreakpoint.line = 4
+          arguments.source = new Types.Source(`Main.scala`.syntax, 0)
+          arguments.sourceModified = false
+          arguments.breakpoints = Array(sourceBreakpoint)
+          arguments
+        }
+
+        val secondBreakpoint = {
+          val arguments = new SetBreakpointArguments()
+          val sourceBreakpoint = new SourceBreakpoint()
+          sourceBreakpoint.line = 9
+          arguments.source = new Types.Source(`Main.scala`.syntax, 0)
+          arguments.sourceModified = false
+          arguments.breakpoints = Array(sourceBreakpoint)
+          arguments
+        }
+
         startDebugServer(runner) { server =>
           val test = for {
-            client <- server.connect
-            _ <- client.initialize()
+            client <- server.startConnection
+            capabilities <- client.initialize()
             _ <- client.launch()
+            _ <- client.initialized
+            _ <- client.setBreakpoints(firstBreakpoint)
+            _ <- client.setBreakpoints(secondBreakpoint)
             _ <- client.configurationDone()
+            stopped <- client.stopped
+            _ <- client.continue(stopped.threadId)
+            stopped2 <- client.stopped
+            _ <- client.continue(stopped2.threadId)
             _ <- client.terminated
             _ <- client.exited
             clientClosed <- awaitClosed(client)
             output <- client.allOutput
           } yield {
             assert(clientClosed)
-            assertNoDiff(output, "Hello, World!")
+            assertNoDiff(
+              output,
+              """|I have a breakpoint
+                 |Breakpoint was continued!
+                 |I have a breakpoint II
+                 |Breakpoint was continued II!
+                 |""".stripMargin
+            )
           }
 
           TestUtil.await(10, SECONDS)(test)
@@ -133,9 +213,10 @@ object DebugServerSpec extends BspBaseSuite {
 
         startDebugServer(runner) { server =>
           val test = for {
-            client <- server.connect
+            client <- server.startConnection
             _ <- client.initialize()
             _ <- client.launch()
+            _ <- client.initialized
             _ <- client.configurationDone()
             _ <- client.exited
             _ <- client.terminated
@@ -150,8 +231,8 @@ object DebugServerSpec extends BspBaseSuite {
   test("does not accept a connection unless the previous session requests a restart") {
     startDebugServer(Task.now(())) { server =>
       val test = for {
-        firstClient <- server.connect
-        secondClient <- server.connect
+        firstClient <- server.startConnection
+        secondClient <- server.startConnection
         requestBeforeRestart <- secondClient.initialize().timeout(FiniteDuration(1, SECONDS)).failed
         _ <- firstClient.disconnect(restart = true)
         _ <- secondClient.initialize().timeout(FiniteDuration(100, MILLISECONDS))
@@ -172,7 +253,7 @@ object DebugServerSpec extends BspBaseSuite {
 
     startDebugServer(runner) { server =>
       val test = for {
-        client <- server.connect
+        client <- server.startConnection
         _ <- client.initialize()
         _ <- client.launch()
       } yield ()
@@ -190,9 +271,9 @@ object DebugServerSpec extends BspBaseSuite {
 
     startDebugServer(awaitCancellation) { server =>
       val test = for {
-        firstClient <- server.connect
+        firstClient <- server.startConnection
         _ <- firstClient.disconnect(restart = true)
-        secondClient <- server.connect
+        secondClient <- server.startConnection
         debuggeeCanceled <- Task.fromFuture(cancelled.future)
         firstClientClosed <- awaitClosed(firstClient)
         secondClientClosed <- awaitClosed(secondClient)
@@ -215,7 +296,7 @@ object DebugServerSpec extends BspBaseSuite {
 
     startDebugServer(awaitCancellation) { server =>
       val test = for {
-        client <- server.connect
+        client <- server.startConnection
         _ <- client.disconnect(restart = false)
         debuggeeCanceled <- Task.fromFuture(cancelled.future)
         clientClosed <- awaitClosed(client)
@@ -233,7 +314,7 @@ object DebugServerSpec extends BspBaseSuite {
 
     startDebugServer(Task.fromFuture(blockedDebuggee.future)) { server =>
       val test = for {
-        client <- server.connect
+        client <- server.startConnection
         _ <- Task(server.cancel())
         clientDisconnected <- awaitClosed(client)
       } yield {
@@ -259,7 +340,7 @@ object DebugServerSpec extends BspBaseSuite {
   }
 
   private def awaitClosed(server: TestServer): Task[Boolean] = {
-    server.connect.failed
+    server.startConnection.failed
       .map {
         case _: SocketTimeoutException => true
         case _: ConnectException => true
@@ -330,7 +411,7 @@ object DebugServerSpec extends BspBaseSuite {
       }
     }
 
-    def connect: Task[DebugAdapterConnection] = {
+    def startConnection: Task[DebugAdapterConnection] = {
       server.address.flatMap {
         case Some(uri) =>
           val connection = DebugAdapterConnection.connectTo(uri)(defaultScheduler)

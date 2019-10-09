@@ -51,6 +51,27 @@ final class DebugTestClient(connect: () => DebugAdapterConnection) {
     activeSession.disconnect(restart = false)
   }
 
+  import DebugTestProtocol.Response
+  def printCapabilities(response: Response[Capabilities]): Unit = {
+    response match {
+      case Response.Failure(message) => sys.error(message)
+      case Response.Success(capabilities) =>
+        pprint.log(capabilities.supportsConfigurationDoneRequest)
+        pprint.log(capabilities.supportsHitConditionalBreakpoints)
+        pprint.log(capabilities.supportsConditionalBreakpoints)
+        pprint.log(capabilities.supportsEvaluateForHovers)
+        pprint.log(capabilities.supportsCompletionsRequest)
+        pprint.log(capabilities.supportsRestartFrame)
+        pprint.log(capabilities.supportsSetVariable)
+        pprint.log(capabilities.supportsRestartRequest)
+        pprint.log(capabilities.supportTerminateDebuggee)
+        pprint.log(capabilities.supportsDelayedStackTraceLoading)
+        pprint.log(capabilities.supportsLogPoints)
+        pprint.log(capabilities.supportsExceptionInfoRequest)
+    }
+
+  }
+
   /**
    * First, disconnects from the active session and then establishes a new connection
    */
