@@ -46,6 +46,7 @@ final class CompilerCache(
 ) {
 
   private val cache = new ConcurrentHashMap[ScalaInstance, Compilers]()
+  private[bloop] def clearCache: Unit = cache.clear()
 
   def get(scalaInstance: ScalaInstance): Compilers =
     cache.computeIfAbsent(scalaInstance, newCompilers)

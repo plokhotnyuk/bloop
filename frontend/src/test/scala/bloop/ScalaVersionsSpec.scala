@@ -7,6 +7,7 @@ import bloop.io.AbsolutePath
 import bloop.util.TestProject
 import bloop.cli.ExitStatus
 import scala.concurrent.duration.FiniteDuration
+import bloop.engine.State
 
 object ScalaVersionsSpec extends bloop.testing.BaseSuite {
   test("cross-compile build to latest Scala versions") {
@@ -67,7 +68,15 @@ object ScalaVersionsSpec extends bloop.testing.BaseSuite {
     }
 
     TestUtil.await(FiniteDuration(100, "s"), ExecutionContext.ioScheduler) {
-      Task.sequence(all).map(_ => ())
+      Task
+        .sequence(all)
+        .map(_ => ())
+        .doOnFinish(
+          _ =>
+            Task {
+              State.stateCache.clearAllStates()
+            }
+        )
     }
   }
 }

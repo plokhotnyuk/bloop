@@ -129,6 +129,8 @@ final class StateCache(cache: ConcurrentHashMap[AbsolutePath, StateCache.CachedS
           }
     }
   }
+
+  private[bloop] def clearAllStates(): Unit = cache.clear()
 }
 
 object StateCache {
