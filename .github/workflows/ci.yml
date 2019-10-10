@@ -1,18 +1,18 @@
-name: Bloop on Windows
+name: Bloop CI
 on:
   push:
 jobs:
-  unix:
+  test:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest]
+        os: [windows-latest, ubuntu-latest]
     steps:
       - uses: actions/checkout@v1
         with:
           submodules: true
-      - uses: olafurpg/setup-scala@v4
+      - uses: olafurpg/setup-scala@v5
         with:
           java-version: graalvm@
       - run: |
