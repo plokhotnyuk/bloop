@@ -125,11 +125,10 @@ trait NailgunTestUtils {
       } yield value
     }
 
-    // These tests can be flaky on Windows, so if they fail we restart them up to 3 times
     Task
       .zip2(serverLogic, runClient)
       .map(t => t._2)
-      .timeout(FiniteDuration(20, TimeUnit.SECONDS))
+      .timeout(FiniteDuration(35, TimeUnit.SECONDS))
   }
 
   /**
