@@ -18,8 +18,7 @@ jobs:
       - uses: actions/setup-node@v1
         with:
           node-version: '10.x'
-      - uses: ./
       - run: |
           curl -Lo coursier https://git.io/coursier-cli && chmod +x coursier && ./coursier --help
-          sbt "jsBridge06/publishLocal" "jsBridge10/publishLocal" "frontend/testOnly bloop.CompileSpec"
+          sbt "jsBridge06/publishLocal" "jsBridge10/publishLocal" "frontend/testOnly bloop.CompileSpec bloop.bsp.TcpBspCompileSpec bloop.RunSpec"
         shell: bash

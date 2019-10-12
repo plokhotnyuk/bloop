@@ -30,6 +30,8 @@ import utest.ufansi.Color
 
 import monix.eval.Task
 import bloop.io.Paths
+import monix.execution.misc.NonFatal
+import bloop.logging.RecordingLogger
 
 class BaseSuite extends TestSuite with BloopHelpers {
   val pprint = _root_.pprint.PPrinter.BlackWhite
@@ -102,6 +104,18 @@ class BaseSuite extends TestSuite with BloopHelpers {
   def assertIsNotDirectory(path: AbsolutePath): Unit = {
     if (path.isDirectory) {
       fail(s"directory exists: $path", stackBump = 1)
+    }
+  }
+
+  def assertExitStatus(obtainedState: TestState, expected: ExitStatus): Unit = {
+    val obtained = obtainedState.status
+    try assert(obtained == expected)
+    catch {
+      case NonFatal(t) =>
+        obtainedState.state.logger match {
+          case logger: RecordingLogger => logger.dump(); throw t
+          case _ => throw t
+        }
     }
   }
 

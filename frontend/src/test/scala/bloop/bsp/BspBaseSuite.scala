@@ -32,6 +32,7 @@ import scala.concurrent.duration.FiniteDuration
 import scala.meta.jsonrpc.{BaseProtocolMessage, LanguageClient, LanguageServer, Response, Services}
 import scala.collection.mutable
 import bloop.logging.Logger
+import bloop.cli.ExitStatus
 
 abstract class BspBaseSuite extends BaseSuite with BspClientTest {
   final class UnmanagedBspTestState(
@@ -535,6 +536,9 @@ abstract class BspBaseSuite extends BaseSuite with BspClientTest {
         throw t
     }
   }
+
+  def assertExitStatus(obtainedState: ManagedBspTestState, expected: ExitStatus): Unit =
+    assertExitStatus(obtainedState.toTestState, expected)
 
   def assertInvalidCompilationState(
       state: ManagedBspTestState,
