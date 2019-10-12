@@ -1316,6 +1316,7 @@ object CompileSpec extends bloop.testing.BaseSuite {
       Await.result(runCompile.runAsync(ExecutionContext.ioScheduler), FiniteDuration(10, "s"))
 
       val actionsOutput = new String(testOut.toByteArray(), StandardCharsets.UTF_8)
+      println(actionsOutput)
       assertNoDiff(
         actionsOutput
           .split(System.lineSeparator())

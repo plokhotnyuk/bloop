@@ -7,7 +7,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        os: [ubuntu-latest]
     steps:
       - uses: actions/checkout@v1
         with:
@@ -20,5 +20,5 @@ jobs:
           node-version: '10.x'
       - run: |
           curl -Lo coursier https://git.io/coursier-cli && chmod +x coursier && ./coursier --help
-          sbt "backend/test" "jsBridge10/test" "jsBridge06/publishLocal" "jsBridge10/publishLocal" "frontend/testOnly -bloop.ScalaVersionsSpec"
+          sbt "jsBridge06/publishLocal" "jsBridge10/publishLocal" "frontend/testOnly bloop.CompileSpec"
         shell: bash
