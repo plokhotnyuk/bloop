@@ -130,13 +130,14 @@ object TestUtil {
     Interpreter.execute(a, Task.now(state))
   }
 
-  def blockOnTask[T](task: Task[T], seconds: Long): T = {
+  def blockOnTask[T](task: Task[T], seconds: Long, logger: Option[RecordingLogger] = None): T = {
     val duration = Duration(seconds, TimeUnit.SECONDS)
     val handle = task.runAsync(ExecutionContext.scheduler)
     try Await.result(handle, duration)
     catch {
       case NonFatal(t) =>
         handle.cancel()
+        logger.foreach(_.dump())
         t match {
           case e: ExecutionException => throw e.getCause()
           case _ => throw t

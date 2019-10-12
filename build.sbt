@@ -197,7 +197,6 @@ lazy val frontend: Project = project
     testSettings,
     testSuiteSettings,
     Defaults.itSettings,
-    fork in Test := true,
     BuildDefaults.frontendTestBuildSettings,
     // Can be removed when metals upgrades to 1.3.0
     inConfig(IntegrationTest)(BloopDefaults.configSettings),
