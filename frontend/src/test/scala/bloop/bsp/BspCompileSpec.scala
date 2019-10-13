@@ -294,7 +294,7 @@ class BspCompileSpec(
             |  -> Data kind: compile-report""".stripMargin
         )
 
-        assertIsFile(writeFile(`A`.srcFor("/main/scala/Foo.scala"), Sources.`Foo2.scala`))
+        writeFile(`A`.srcFor("/main/scala/Foo.scala"), Sources.`Foo2.scala`)
 
         val secondCompiledState = compiledState.compile(`B`)
         assertExitStatus(secondCompiledState, ExitStatus.CompilationError)
@@ -324,7 +324,7 @@ class BspCompileSpec(
             |  -> Data kind: compile-report """.stripMargin
         )
 
-        assertIsFile(writeFile(`A`.srcFor("/main/scala/Foo.scala"), Sources.`Foo3.scala`))
+        writeFile(`A`.srcFor("/main/scala/Foo.scala"), Sources.`Foo3.scala`)
 
         val thirdCompiledState = secondCompiledState.compile(`B`)
         assertExitStatus(thirdCompiledState, ExitStatus.CompilationError)
@@ -340,7 +340,7 @@ class BspCompileSpec(
         assertSameExternalClassesDirs(compiledState, thirdCompiledState, `B`)
         assertDifferentExternalClassesDirs(compiledState, thirdCompiledState, `A`)
 
-        assertIsFile(writeFile(`A`.srcFor("/main/scala/Foo.scala"), Sources.`Foo.scala`))
+        writeFile(`A`.srcFor("/main/scala/Foo.scala"), Sources.`Foo.scala`)
 
         val fourthCompiledState = thirdCompiledState.compile(`B`)
         assertExitStatus(fourthCompiledState, ExitStatus.Ok)
@@ -521,7 +521,7 @@ class BspCompileSpec(
             """.stripMargin
         )
 
-        assertIsFile(writeFile(`A`.srcFor("/A.scala"), Sources.`A2.scala`))
+        writeFile(`A`.srcFor("/A.scala"), Sources.`A2.scala`)
         val secondCompiledState = compiledState.compile(`A`)
         assertExitStatus(secondCompiledState, ExitStatus.CompilationError)
         assertInvalidCompilationState(
@@ -548,7 +548,7 @@ class BspCompileSpec(
             """.stripMargin
         )
 
-        assertIsFile(writeFile(`A`.srcFor("/A.scala"), Sources.`A.scala`))
+        writeFile(`A`.srcFor("/A.scala"), Sources.`A.scala`)
         val thirdCompiledState = secondCompiledState.compile(`A`)
         assertExitStatus(thirdCompiledState, ExitStatus.Ok)
         assertValidCompilationState(thirdCompiledState, projects)
@@ -568,7 +568,7 @@ class BspCompileSpec(
             """.stripMargin
         )
 
-        assertIsFile(writeFile(`A`.srcFor("/A.scala"), Sources.`A3.scala`))
+        writeFile(`A`.srcFor("/A.scala"), Sources.`A3.scala`)
         val fourthCompiledState = thirdCompiledState.compile(`A`)
         assertExitStatus(fourthCompiledState, ExitStatus.CompilationError)
         assertInvalidCompilationState(
@@ -598,7 +598,7 @@ class BspCompileSpec(
             """.stripMargin
         )
 
-        assertIsFile(writeFile(`A`.srcFor("/A.scala"), Sources.`A4.scala`))
+        writeFile(`A`.srcFor("/A.scala"), Sources.`A4.scala`)
         val fifthCompiledState = fourthCompiledState.compile(`A`)
         assertExitStatus(fifthCompiledState, ExitStatus.Ok)
         assertValidCompilationState(fifthCompiledState, projects)
@@ -618,7 +618,7 @@ class BspCompileSpec(
             """.stripMargin
         )
 
-        assertIsFile(writeFile(`A`.srcFor("/Base.scala"), Sources.`Base2.scala`))
+        writeFile(`A`.srcFor("/Base.scala"), Sources.`Base2.scala`)
         val sixthCompiledState = fifthCompiledState.compile(`A`)
         assertExitStatus(sixthCompiledState, ExitStatus.CompilationError)
         assertInvalidCompilationState(
@@ -657,7 +657,7 @@ class BspCompileSpec(
             """.stripMargin
         )
 
-        assertIsFile(writeFile(`A`.srcFor("/Base.scala"), Sources.`Base3.scala`))
+        writeFile(`A`.srcFor("/Base.scala"), Sources.`Base3.scala`)
         val seventhCompiledState = sixthCompiledState.compile(`A`)
         assertExitStatus(seventhCompiledState, ExitStatus.Ok)
         assertValidCompilationState(seventhCompiledState, projects)
@@ -775,7 +775,7 @@ class BspCompileSpec(
       )
 
       loadBspState(workspace, projects, bspLogger) { state =>
-        assertIsFile(writeFile(`A`.srcFor("main/scala/Extra.scala"), Sources.`Extra2.scala`))
+        writeFile(`A`.srcFor("main/scala/Extra.scala"), Sources.`Extra2.scala`)
 
         val compiledState = state.compile(`A`)
         assertExitStatus(compiledState, ExitStatus.Ok)
@@ -867,7 +867,7 @@ class BspCompileSpec(
       )
 
       loadBspState(workspace, projects, bspLogger) { state =>
-        assertIsFile(writeFile(`A`.srcFor("main/scala/Foo.scala"), Sources.`Foo2.scala`))
+        writeFile(`A`.srcFor("main/scala/Foo.scala"), Sources.`Foo2.scala`)
 
         val compiledState = state.compile(`A`)
         assertExitStatus(compiledState, ExitStatus.CompilationError)
@@ -898,13 +898,13 @@ class BspCompileSpec(
         )
 
         // Fix previous compilation error in BSP in CLI client
-        assertIsFile(writeFile(`A`.srcFor("main/scala/Foo.scala"), Sources.`Foo.scala`))
+        writeFile(`A`.srcFor("main/scala/Foo.scala"), Sources.`Foo.scala`)
         val secondCliCompiledState = compiledState.toTestStateFrom(cliCompiledState).compile(`A`)
         assertExitStatus(secondCliCompiledState, ExitStatus.Ok)
         assertValidCompilationState(secondCliCompiledState, projects)
         assertSameExternalClassesDirs(cliCompiledState, secondCliCompiledState, projects)
 
-        assertIsFile(writeFile(`A`.srcFor("main/scala/Bar.scala"), Sources.`Bar2.scala`))
+        writeFile(`A`.srcFor("main/scala/Bar.scala"), Sources.`Bar2.scala`)
         val secondCompiledState = compiledState.compile(`A`)
         assertExitStatus(secondCompiledState, ExitStatus.CompilationError)
         assertInvalidCompilationState(
@@ -933,7 +933,7 @@ class BspCompileSpec(
         )
 
         // Fix previous compilation error in BSP in CLI client
-        assertIsFile(writeFile(`A`.srcFor("main/scala/Bar.scala"), Sources.`Bar.scala`))
+        writeFile(`A`.srcFor("main/scala/Bar.scala"), Sources.`Bar.scala`)
         val thirdCliCompiledState =
           secondCompiledState.toTestStateFrom(secondCliCompiledState).compile(`A`)
         assertExitStatus(thirdCliCompiledState, ExitStatus.Ok)
