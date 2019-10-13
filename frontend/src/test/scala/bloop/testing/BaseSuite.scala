@@ -117,7 +117,7 @@ class BaseSuite extends TestSuite with BloopHelpers {
           case logger: RecordingLogger => logger.dump(); throw t
           case logger: BspServerLogger =>
             logger.underlying match {
-              case logger: RecordingLogger => logger.dump()
+              case logger: RecordingLogger => logger.dump(); throw t
               case _ => throw t
             }
           case _ => throw t
