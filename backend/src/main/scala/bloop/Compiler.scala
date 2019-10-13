@@ -84,7 +84,7 @@ case class CompileOutPaths(
      */
     val classesName = externalClassesDir.underlying.getFileName()
     val newClassesName = generateDirName(classesName.toString)
-    AbsolutePath(Files.createDirectories(parentInternalDir.resolve(newClassesName)).toRealPath())
+    AbsolutePath(Files.createDirectories(parentInternalDir.resolve(newClassesName))) //.toRealPath())
   }
 
   lazy val internalNewClassesDir: AbsolutePath = {
